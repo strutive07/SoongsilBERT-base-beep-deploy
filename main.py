@@ -13,23 +13,42 @@ from queue import Queue, Empty
 from threading import Thread
 import time
 
+import re
+import emoji
+from soynlp.normalizer import repeat_normalize
+
+emojis = ''.join(emoji.UNICODE_EMOJI.keys())
+pattern = re.compile(f'[^ .,?!/@$%~％·∼()\x00-\x7Fㄱ-힣{emojis}]+')
+urlpattern = re.compile(
+    r'https?://(www.)?[-a-zA-Z0-9@:%.+~#=]{1,256}.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)')
+
+def clean_text(x):
+    x = pattern.sub(' ', x)
+    x = url_pattern.sub('', x)
+    x = x.strip()
+    x = repeat_normalize(x, num_repeats=2)
+    return x
+
+def remove_suffix(row):
+    if row["title"][:len(row["category"])] == row["category"]:
+        row["title"] = row["title"][len(row["category"]):]
+    return row
+
 category_map = {
-    "0": "일반글",
-    "1": "공격발언",
-    "2": "차별발언"
+    "0": "no push",
+    "1": "push",
 }
 
 category_map_logits = {
-    "0": "Default",
-    "1": "Offensive",
-    "2": "Hate"
+    "0": "no push",
+    "1": "push",
 }
 
 os.system('ls')
 app = Flask(__name__)
 
-tokenizer = RobertaTokenizer.from_pretrained('jason9693/SoongsilBERT-beep-base')
-model = RobertaForSequenceClassification.from_pretrained('jason9693/SoongsilBERT-beep-base')
+tokenizer = RobertaTokenizer.from_pretrained('jason9693/SoongsilBERT-notice-base')
+model = RobertaForSequenceClassification.from_pretrained('jason9693/SoongsilBERT-notice-base')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
@@ -63,6 +82,11 @@ def handle_requests_by_batch():
         for idx, request in enumerate(request_batch):
             types = request["input"][0]
             txt = request["input"][1]
+            category = request["cat"][2]
+            
+            txt = remove_suffix({'title': txt, 'category': category})['title']
+            txt = clean_text(txt)
+            
             valid_texts.append(txt)
             valid_requests.append(request)
         request_batch = []
@@ -133,9 +157,11 @@ def generate(types):
         args = []
 
         text = request.form['text']
+        category = request.form['category']
 
         args.append(types)
         args.append(text)
+        args.append(category)
 
     except Exception as e:
         return {'message': 'Invalid request'}, 500
