@@ -26,7 +26,7 @@ urlpattern = re.compile(
 
 def clean_text(x):
     x = pattern.sub(' ', x)
-    x = url_pattern.sub('', x)
+    x = urlpattern.sub('', x)
     x = x.strip()
     x = repeat_normalize(x, num_repeats=2)
     return x
@@ -84,7 +84,7 @@ def handle_requests_by_batch():
         for idx, request in enumerate(request_batch):
             types = request["input"][0]
             txt = request["input"][1]
-            category = request["cat"][2]
+            category = request["input"][2]
             
             txt = remove_suffix({'title': txt, 'category': category})['title']
             txt = clean_text(txt)
