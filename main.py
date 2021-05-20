@@ -17,6 +17,8 @@ import re
 import emoji
 from soynlp.normalizer import repeat_normalize
 
+logger = logging.getLogger(__file__)
+
 emojis = ''.join(emoji.UNICODE_EMOJI.keys())
 pattern = re.compile(f'[^ .,?!/@$%~％·∼()\x00-\x7Fㄱ-힣{emojis}]+')
 urlpattern = re.compile(
@@ -164,6 +166,7 @@ def generate(types):
         args.append(category)
 
     except Exception as e:
+        logger.exception(exc_info=e)
         return {'message': 'Invalid request'}, 500
 
     # input a request on queue
