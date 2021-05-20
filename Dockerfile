@@ -10,7 +10,9 @@ RUN apt-get update && \
 RUN pip install --upgrade pip
 RUN pip install transformers==3.5.0 \
     flask \
-    waitress 
+    waitress \
+    emoji \
+    soynlp
 
 WORKDIR /app
 COPY . .
