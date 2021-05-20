@@ -159,7 +159,7 @@ def generate(types):
         args = []
 
         text = request.form['text']
-        category = request.form['category']
+        category = request.form.get('category', '')
 
         args.append(types)
         args.append(text)
