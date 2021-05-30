@@ -182,7 +182,7 @@ def generate(types):
 ##
 # Get post request page.
 @app.route('/predict_json/<types>', methods=['POST'])
-def generate(types):
+def generate_json(types):
     if types not in ['logits', 'class', 'dplogits', 'dpclass']:
         return {'Error': 'Invalid types'}, 404
 
