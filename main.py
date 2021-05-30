@@ -3,7 +3,7 @@ import sentencepiece
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
 import logging
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 import torch
 from torch.nn import functional as F
 import traceback
@@ -178,6 +178,42 @@ def generate(types):
         time.sleep(CHECK_INTERVAL)
 
     return req['output']
+
+##
+# Get post request page.
+@app.route('/predict_json/<types>', methods=['POST'])
+def generate(types):
+    if types not in ['logits', 'class', 'dplogits', 'dpclass']:
+        return {'Error': 'Invalid types'}, 404
+
+    # GPU app can process only one request in one time.
+    if requests_queue.qsize() > BATCH_SIZE:
+        return {'Error': 'Too Many Requests'}, 429
+
+    try:
+        args = []
+        req_json = request.get_json(force=True)
+
+        text = req_json['text']
+        category = req_json('category', '')
+
+        args.append(types)
+        args.append(text)
+        args.append(category)
+
+    except Exception as e:
+        logger.exception(exc_info=e)
+        return {'message': 'Invalid request'}, 500
+
+    # input a request on queue
+    req = {'input': args}
+    requests_queue.put(req)
+
+    # wait
+    while 'output' not in req:
+        time.sleep(CHECK_INTERVAL)
+
+    return jsonify(req['output'])
 
 
 ##
