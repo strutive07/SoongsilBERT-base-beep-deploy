@@ -195,7 +195,7 @@ def generate_json(types):
         req_json = request.get_json(force=True)
 
         text = req_json['text']
-        category = req_json('category', '')
+        category = req_json.get('category', '')
 
         args.append(types)
         args.append(text)
